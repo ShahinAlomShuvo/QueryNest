@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function ChatPage() {
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="w-full h-[calc(100vh-0px)] p-0 m-0">
       <AutoChat />
     </div>
   );

@@ -73,119 +73,111 @@ export function AutoChat() {
   };
 
   return (
-    <div className="flex flex-col h-[85vh] bg-[#f8f9fa] dark:bg-[#1f1f1f] rounded-xl overflow-hidden shadow-lg max-w-4xl mx-auto">
-      <div className="p-4 bg-[#8e24aa] text-white flex items-center gap-2">
-        <Bot className="w-6 h-6" />
-        <h2 className="text-xl font-semibold">QueryNest AI</h2>
-      </div>
-
-      <div className="flex-1 overflow-auto p-4 space-y-6 bg-white dark:bg-[#2d2d2d] relative">
+    <div className="flex flex-col h-full w-full">
+      <div className="flex-1 overflow-auto">
         {messages.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center p-6">
-            <div className="text-center max-w-md p-6 rounded-xl bg-[#f3f3f3] dark:bg-[#383838]">
-              <div className="flex justify-center mb-4">
-                <div className="p-3 rounded-full bg-[#8e24aa] flex-shrink-0">
-                  <Bot className="w-6 h-6 text-white" />
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">
-                Welcome to QueryNest
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                I can answer questions based on all the documents in the system.
-                What would you like to know?
-              </p>
+          <div className="h-full flex flex-col items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-[#8e24aa] flex items-center justify-center mb-6">
+              <Bot className="w-9 h-9 text-white" />
             </div>
+            <h2 className="text-2xl font-semibold mb-2">QueryNest</h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-md text-center mb-8">
+              I can answer questions based on your documents. What would you
+              like to know?
+            </p>
           </div>
         )}
 
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex items-start gap-4 ${
-              message.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            {message.role === "assistant" && (
-              <div className="p-2 rounded-full bg-[#8e24aa] flex-shrink-0">
-                <Bot className="w-5 h-5 text-white" />
-              </div>
-            )}
-
+        <div className="space-y-0">
+          {messages.map((message, index) => (
             <div
-              className={`flex flex-col max-w-[80%] ${
-                message.role === "user" ? "items-end" : "items-start"
+              key={index}
+              className={`py-6 ${
+                message.role === "assistant"
+                  ? "bg-white dark:bg-gray-900"
+                  : "bg-gray-50 dark:bg-gray-800"
               }`}
             >
-              <div
-                className={`p-4 rounded-2xl ${
-                  message.role === "user"
-                    ? "bg-[#e9e9fd] text-[#1a1a1a] rounded-tr-none"
-                    : "bg-[#f3f3f3] dark:bg-[#383838] rounded-tl-none"
-                }`}
-              >
-                <p className="whitespace-pre-wrap">{message.content}</p>
-              </div>
-            </div>
-
-            {message.role === "user" && (
-              <div className="p-2 rounded-full bg-[#4285f4] flex-shrink-0">
-                <User className="w-5 h-5 text-white" />
-              </div>
-            )}
-          </div>
-        ))}
-
-        {isLoading && (
-          <div className="flex items-start gap-4 justify-start">
-            <div className="p-2 rounded-full bg-[#8e24aa] flex-shrink-0">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex flex-col max-w-[80%] items-start">
-              <div className="p-4 rounded-2xl bg-[#f3f3f3] dark:bg-[#383838] rounded-tl-none">
-                <div className="flex space-x-2">
-                  <div className="h-2 w-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-bounce" />
-                  <div
-                    className="h-2 w-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  />
-                  <div
-                    className="h-2 w-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.4s" }}
-                  />
+              <div className="max-w-3xl mx-auto px-4 sm:px-8">
+                <div className="flex items-start gap-4">
+                  {message.role === "assistant" ? (
+                    <div className="w-8 h-8 rounded-full bg-[#8e24aa] flex items-center justify-center flex-shrink-0">
+                      <Bot className="w-5 h-5 text-white" />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-[#4285f4] flex items-center justify-center flex-shrink-0">
+                      <User className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+                  <div className="flex-1 prose dark:prose-invert max-w-none">
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          ))}
+
+          {isLoading && (
+            <div className="py-6 bg-white dark:bg-gray-900">
+              <div className="max-w-3xl mx-auto px-4 sm:px-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full bg-[#8e24aa] flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex space-x-2 items-center h-8">
+                      <div className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" />
+                      <div
+                        className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      />
+                      <div
+                        className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.4s" }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div ref={messagesEndRef} />
       </div>
 
-      <form
-        className="p-4 border-t bg-white dark:bg-[#2d2d2d] flex gap-2"
-        onSubmit={handleSubmit}
-      >
-        <Input
-          className="flex-1 bg-[#f3f3f3] dark:bg-[#383838] rounded-xl"
-          disabled={isLoading}
-          placeholder="Ask me about your documents..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <Button
-          className="min-w-10 rounded-full"
-          color="secondary"
-          disabled={isLoading || !input.trim()}
-          type="submit"
-        >
-          {isLoading ? (
-            <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-        </Button>
-      </form>
+      <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+        <div className="max-w-3xl mx-auto">
+          <form
+            className="flex gap-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2"
+            onSubmit={handleSubmit}
+          >
+            <Input
+              className="flex-1 border-0 shadow-none focus-visible:ring-0 bg-transparent"
+              disabled={isLoading}
+              placeholder="Ask me about your documents..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+            />
+            <Button
+              className="rounded-full w-10 h-10 p-0 flex items-center justify-center"
+              color="secondary"
+              disabled={isLoading || !input.trim()}
+              type="submit"
+            >
+              {isLoading ? (
+                <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+            </Button>
+          </form>
+          <p className="text-xs text-center mt-2 text-gray-500">
+            QueryNest processes your documents using AI to provide accurate
+            answers
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
