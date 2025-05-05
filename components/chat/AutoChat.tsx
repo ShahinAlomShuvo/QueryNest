@@ -74,7 +74,7 @@ export function AutoChat() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto px-4 sm:px-8 py-4">
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-[#8e24aa] flex items-center justify-center mb-6">
@@ -88,54 +88,61 @@ export function AutoChat() {
           </div>
         )}
 
-        <div className="space-y-0">
+        <div className="max-w-3xl mx-auto space-y-6">
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`py-6 ${
-                message.role === "assistant"
-                  ? "bg-white dark:bg-gray-900"
-                  : "bg-gray-50 dark:bg-gray-800"
+              className={`flex items-start gap-4 ${
+                message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div className="max-w-3xl mx-auto px-4 sm:px-8">
-                <div className="flex items-start gap-4">
-                  {message.role === "assistant" ? (
-                    <div className="w-8 h-8 rounded-full bg-[#8e24aa] flex items-center justify-center flex-shrink-0">
-                      <Bot className="w-5 h-5 text-white" />
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-[#4285f4] flex items-center justify-center flex-shrink-0">
-                      <User className="w-5 h-5 text-white" />
-                    </div>
-                  )}
-                  <div className="flex-1 prose dark:prose-invert max-w-none">
-                    <p className="whitespace-pre-wrap">{message.content}</p>
-                  </div>
+              {message.role === "assistant" && (
+                <div className="w-8 h-8 rounded-full bg-[#8e24aa] flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+              )}
+
+              <div
+                className={`flex flex-col max-w-[80%] ${
+                  message.role === "user" ? "items-end" : "items-start"
+                }`}
+              >
+                <div
+                  className={`p-4 rounded-2xl ${
+                    message.role === "user"
+                      ? "bg-[#e9e9fd] dark:bg-[#4a4a7c] text-[#1a1a1a] dark:text-white rounded-tr-none"
+                      : "bg-[#f3f3f3] dark:bg-[#383838] rounded-tl-none"
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
               </div>
+
+              {message.role === "user" && (
+                <div className="w-8 h-8 rounded-full bg-[#4285f4] flex items-center justify-center flex-shrink-0">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+              )}
             </div>
           ))}
 
           {isLoading && (
-            <div className="py-6 bg-white dark:bg-gray-900">
-              <div className="max-w-3xl mx-auto px-4 sm:px-8">
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-[#8e24aa] flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex space-x-2 items-center h-8">
-                      <div className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" />
-                      <div
-                        className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      />
-                      <div
-                        className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
-                        style={{ animationDelay: "0.4s" }}
-                      />
-                    </div>
+            <div className="flex items-start gap-4 justify-start">
+              <div className="w-8 h-8 rounded-full bg-[#8e24aa] flex items-center justify-center flex-shrink-0">
+                <Bot className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex flex-col max-w-[80%] items-start">
+                <div className="p-4 rounded-2xl bg-[#f3f3f3] dark:bg-[#383838] rounded-tl-none">
+                  <div className="flex space-x-2">
+                    <div className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" />
+                    <div
+                      className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    />
+                    <div
+                      className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.4s" }}
+                    />
                   </div>
                 </div>
               </div>
