@@ -1,3 +1,64 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Markdown Renderer Styles */
+.markdown-renderer {
+  @apply text-gray-800 dark:text-gray-200;
+}
+
+.markdown-renderer .prose pre {
+  @apply bg-gray-100 dark:bg-gray-800 p-0;
+}
+
+.markdown-renderer pre code {
+  @apply text-sm;
+}
+
+/* Syntax highlighting */
+.hljs-comment,
+.hljs-quote {
+  @apply text-gray-500 dark:text-gray-400 italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag {
+  @apply text-purple-600 dark:text-purple-400 font-bold;
+}
+
+.hljs-string,
+.hljs-template-tag,
+.hljs-doctag {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.hljs-number,
+.hljs-literal {
+  @apply text-amber-600 dark:text-amber-400;
+}
+
+.hljs-type,
+.hljs-built_in {
+  @apply text-blue-600 dark:text-blue-400;
+}
+
+.hljs-tag,
+.hljs-name,
+.hljs-attribute {
+  @apply text-red-600 dark:text-red-400;
+}
+
+.hljs-regexp,
+.hljs-link {
+  @apply text-cyan-600 dark:text-cyan-400;
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-selector-id {
+  @apply text-orange-600 dark:text-orange-400 font-bold;
+}
+
+.hljs-bullet {
+  @apply text-blue-600 dark:text-blue-400;
+}

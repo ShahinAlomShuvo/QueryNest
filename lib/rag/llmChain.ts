@@ -39,6 +39,15 @@ export const createRagChain = async (documents: Document[]) => {
       Question: {input}
       
       If the answer is not in the context, just say "I don't have information about that in the provided documents."
+      
+      Format your answer using markdown:
+      - Use **bold** for emphasis
+      - Create proper headings with # where appropriate
+      - Use bullet points or numbered lists when listing items
+      - Format code blocks with proper syntax highlighting using triple backticks with the language name
+      - Include tables using markdown table syntax when presenting structured data
+      - Use > for quotations from the documents
+      - Make your answer as informative and well-formatted as possible
     `);
 
     // Initialize the Gemini LLM

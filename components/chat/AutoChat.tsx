@@ -5,6 +5,7 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 
 import { Send, Bot, User } from "../icons";
+import { MarkdownRenderer } from "../ui/markdown-renderer";
 
 import { processAllDocsQuery } from "@/lib/actions";
 
@@ -88,7 +89,7 @@ export function AutoChat() {
           </div>
         )}
 
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto space-y-6">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -114,7 +115,14 @@ export function AutoChat() {
                       : "bg-[#f3f3f3] dark:bg-[#383838] rounded-tl-none"
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  {message.role === "assistant" ? (
+                    <MarkdownRenderer
+                      className="prose prose-sm dark:prose-invert max-w-none"
+                      content={message.content}
+                    />
+                  ) : (
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  )}
                 </div>
               </div>
 
