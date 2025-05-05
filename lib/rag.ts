@@ -1,4 +1,7 @@
+/* eslint-disable no-console */
 // lib/rag.ts
+import { readdirSync } from "fs";
+
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
@@ -8,8 +11,6 @@ import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
 import { createRetrievalChain } from "langchain/chains/retrieval";
 import { Document } from "langchain/document";
-import { readdirSync } from "fs";
-import { join } from "path";
 
 // Function to create a docs directory if it doesn't exist
 const createDocsDirectory = async () => {
@@ -31,7 +32,7 @@ const createDocsDirectory = async () => {
   }
 };
 
-// Function to read content from a file
+// Function to read content from a text file
 const readTextFromFile = async (filePath: string): Promise<string> => {
   try {
     const fs = require("fs");
@@ -43,10 +44,51 @@ const readTextFromFile = async (filePath: string): Promise<string> => {
 
     // Read the file
     const content = fs.readFileSync(filePath, "utf8");
+
     return content;
   } catch (error: any) {
-    console.error("Error reading file:", error);
+    console.error("Error reading text file:", error);
     throw error;
+  }
+};
+
+// Function to read content from a PDF file
+const readPdfFromFile = async (filePath: string): Promise<string> => {
+  try {
+    const fs = require("fs");
+    const pdf = require("pdf-parse/lib/pdf-parse.js"); // Direct require to avoid test data loading
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+
+    // Read PDF file buffer
+    const dataBuffer = fs.readFileSync(filePath);
+
+    // Parse PDF to text with options to avoid test files
+    const pdfData = await pdf(dataBuffer, {
+      max: 0, // No page limit
+      version: "v1.10.100", // Use specific version to avoid test file checks
+    });
+
+    return pdfData.text || "";
+  } catch (error: any) {
+    console.error(`Error reading PDF file ${filePath}:`, error.message);
+    throw error;
+  }
+};
+
+// Function to read content from any supported file
+const readContentFromFile = async (filePath: string): Promise<string> => {
+  const lowerPath = filePath.toLowerCase();
+
+  if (lowerPath.endsWith(".pdf")) {
+    return readPdfFromFile(filePath);
+  } else if (lowerPath.endsWith(".txt")) {
+    return readTextFromFile(filePath);
+  } else {
+    throw new Error(`Unsupported file type: ${filePath}`);
   }
 };
 
@@ -54,35 +96,46 @@ const readTextFromFile = async (filePath: string): Promise<string> => {
 const loadAllDocuments = async (): Promise<Document[]> => {
   try {
     const docsDir = await createDocsDirectory();
-    const fs = require("fs");
     const path = require("path");
 
     // Get all files in directory
     const files = readdirSync(docsDir);
 
-    // Filter only text and PDF files (we can only process text for now)
-    const textFiles = files.filter((file) =>
-      file.toLowerCase().endsWith(".txt")
-    );
+    // Filter for supported file types
+    const supportedFiles = files.filter((file) => {
+      const lowerFile = file.toLowerCase();
+
+      return lowerFile.endsWith(".txt") || lowerFile.endsWith(".pdf");
+    });
 
     // Load content from each file
     const documents: Document[] = [];
 
-    for (const file of textFiles) {
-      const filePath = path.join(docsDir, file);
-      const content = await readTextFromFile(filePath);
+    for (const file of supportedFiles) {
+      try {
+        const filePath = path.join(docsDir, file);
+        const content = await readContentFromFile(filePath);
 
-      documents.push(
-        new Document({
-          pageContent: content,
-          metadata: { source: filePath },
-        })
-      );
+        if (content && content.trim() !== "") {
+          documents.push(
+            new Document({
+              pageContent: content,
+              metadata: { source: filePath },
+            })
+          );
+          console.log(`Successfully loaded: ${filePath}`);
+        } else {
+          console.warn(`Empty content in file: ${filePath}`);
+        }
+      } catch (fileError) {
+        console.error(`Error processing file ${file}:`, fileError);
+      }
     }
 
     return documents;
   } catch (error) {
     console.error("Error loading all documents:", error);
+
     return [];
   }
 };
@@ -98,7 +151,7 @@ export async function askWithRAG(question: string, filePath?: string) {
 
     if (filePath) {
       // Single file mode
-      const content = await readTextFromFile(filePath);
+      const content = await readContentFromFile(filePath);
 
       if (!content) {
         return { text: "No content found in the document.", sourceDocs: [] };
@@ -184,6 +237,7 @@ export async function askWithRAG(question: string, filePath?: string) {
     };
   } catch (error: any) {
     console.error("Error in RAG processing:", error);
+
     return {
       text: "Error processing your request. Please check if the file is valid and try again.",
       error: error.message || "Unknown error",
