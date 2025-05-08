@@ -12,6 +12,7 @@ import {
   User,
   Menu,
   X,
+  FileText,
 } from "@/components/icons";
 
 export function Sidebar() {

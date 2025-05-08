@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 
-import { Send, Bot, User } from "../icons";
+import { Send, Bot, User, Paperclip, Loader2, X, FileText } from "lucide-react";
 import { MarkdownRenderer } from "../ui/markdown-renderer";
 
 import { processAllDocsQuery } from "@/lib/actions";
@@ -12,13 +12,24 @@ import { processAllDocsQuery } from "@/lib/actions";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  fileAttachment?: {
+    name: string;
+    path: string;
+  };
 }
 
 export function AutoChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pendingFile, setPendingFile] = useState<{
+    name: string;
+    path: string;
+    fullPath: string;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -28,13 +39,83 @@ export function AutoChat() {
     scrollToBottom();
   }, [messages]);
 
+  const handleFileSelect = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const removePendingFile = () => {
+    setPendingFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const fileType = file.name.split(".").pop()?.toLowerCase();
+
+      // Validate file type
+      if (fileType !== "pdf" && fileType !== "txt") {
+        alert("Please select a PDF or text file.");
+        return;
+      }
+
+      setIsUploading(true);
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Set as pending file (don't add to chat yet)
+          setPendingFile({
+            name: file.name,
+            path: data.fileName,
+            fullPath: data.filePath,
+          });
+        } else {
+          alert(data.error || "Failed to upload file");
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        alert("An error occurred while uploading the file");
+      } finally {
+        setIsUploading(false);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!input.trim()) return;
+    // Check if we have either input text or a pending file
+    if (!input.trim() && !pendingFile) return;
 
-    // Add user message
-    const userMessage: Message = { role: "user", content: input };
+    let userContent = input.trim();
+
+    // If there's no input but there is a file, use a default question
+    if (!userContent && pendingFile) {
+      userContent = "Please analyze this document";
+    }
+
+    // Add user message with pending file if it exists
+    const userMessage: Message = {
+      role: "user",
+      content: userContent,
+      ...(pendingFile && {
+        fileAttachment: { name: pendingFile.name, path: pendingFile.path },
+      }),
+    };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -43,22 +124,45 @@ export function AutoChat() {
     try {
       // Create form data for server action
       const formData = new FormData();
+      formData.append("question", userContent);
 
-      formData.append("question", input);
+      // If there's a pending file, use it for the query
+      if (pendingFile) {
+        formData.append("filePath", pendingFile.fullPath);
 
-      // Call server action
-      const result = await processAllDocsQuery(formData);
+        // Call file-specific chat API
+        const response = await fetch("/api/file-chat", {
+          method: "POST",
+          body: formData,
+        });
 
-      // Extract text or error message
-      const responseText =
-        "error" in result
+        const result = await response.json();
+        const responseText = result.error
           ? result.error
           : result.text || "No answer could be found.";
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: responseText },
-      ]);
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: responseText },
+        ]);
+
+        // Clear pending file after sending
+        setPendingFile(null);
+      } else {
+        // Regular RAG query
+        const result = await processAllDocsQuery(formData);
+
+        // Extract text or error message
+        const responseText =
+          "error" in result
+            ? result.error
+            : result.text || "No answer could be found.";
+
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: responseText },
+        ]);
+      }
     } catch (error) {
       console.error("Error:", error);
       setMessages((prev) => [
@@ -115,6 +219,17 @@ export function AutoChat() {
                       : "bg-[#f3f3f3] dark:bg-[#383838] rounded-tl-none"
                   }`}
                 >
+                  {message.fileAttachment && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        <span className="text-sm font-medium">
+                          {message.fileAttachment.name}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {message.role === "assistant" ? (
                     <MarkdownRenderer
                       className="prose prose-sm dark:prose-invert max-w-none"
@@ -163,21 +278,63 @@ export function AutoChat() {
 
       <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
         <div className="max-w-3xl mx-auto">
+          {pendingFile && (
+            <div className="flex items-center gap-2 mb-2 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+              <FileText className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+              <span className="text-sm text-blue-700 dark:text-blue-300 flex-1">
+                Added file: {pendingFile.name}
+              </span>
+              <button
+                onClick={removePendingFile}
+                className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full"
+              >
+                <X className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+              </button>
+            </div>
+          )}
           <form
             className="flex gap-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2"
             onSubmit={handleSubmit}
           >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.txt"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleFileSelect}
+              disabled={isUploading || isLoading || !!pendingFile}
+              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-full flex-shrink-0 w-10 h-10 p-0 flex items-center justify-center"
+            >
+              {isUploading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Paperclip className="h-5 w-5" />
+              )}
+            </Button>
             <Input
               className="flex-1 border-0 shadow-none focus-visible:ring-0 bg-transparent"
-              disabled={isLoading}
-              placeholder="Ask me about your documents..."
+              disabled={isLoading || isUploading}
+              placeholder={
+                isUploading
+                  ? "Uploading file..."
+                  : pendingFile
+                    ? "Ask about this file..."
+                    : "Ask me anything..."
+              }
               value={input}
               onChange={(e) => setInput(e.target.value)}
             />
             <Button
               className="rounded-full w-10 h-10 p-0 flex items-center justify-center"
               color="secondary"
-              disabled={isLoading || !input.trim()}
+              disabled={
+                isLoading || isUploading || (!input.trim() && !pendingFile)
+              }
               type="submit"
             >
               {isLoading ? (
@@ -188,8 +345,9 @@ export function AutoChat() {
             </Button>
           </form>
           <p className="text-xs text-center mt-2 text-gray-500">
-            QueryNest processes your documents using AI to provide accurate
-            answers
+            {pendingFile
+              ? "Enter your question and press send"
+              : "Upload a file or ask a question about your documents"}
           </p>
         </div>
       </div>
