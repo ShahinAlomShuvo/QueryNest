@@ -1,14 +1,9 @@
 /* eslint-disable no-console */
 
-/**
- * Reads content from a PDF file
- * @param filePath Path to the PDF file
- * @returns The text content extracted from the PDF
- */
 export const readPdfFromFile = async (filePath: string): Promise<string> => {
   try {
     const fs = require("fs");
-    const pdf = require("pdf-parse/lib/pdf-parse.js"); // Direct require to avoid test data loading
+    const pdf = require("pdf-parse/lib/pdf-parse.js");
 
     // Check if file exists
     if (!fs.existsSync(filePath)) {

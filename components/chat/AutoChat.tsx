@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-
 import { Send, Bot, User, Paperclip, Loader2, X, FileText } from "lucide-react";
+
 import { MarkdownRenderer } from "../ui/markdown-renderer";
 
 import { processAllDocsQuery } from "@/lib/actions";
@@ -60,6 +60,7 @@ export function AutoChat() {
       // Validate file type
       if (fileType !== "pdf" && fileType !== "txt") {
         alert("Please select a PDF or text file.");
+
         return;
       }
 
@@ -67,6 +68,7 @@ export function AutoChat() {
 
       try {
         const formData = new FormData();
+
         formData.append("file", file);
 
         const response = await fetch("/api/upload", {
@@ -124,6 +126,7 @@ export function AutoChat() {
     try {
       // Create form data for server action
       const formData = new FormData();
+
       formData.append("question", userContent);
 
       // If there's a pending file, use it for the query
@@ -285,8 +288,8 @@ export function AutoChat() {
                 Added file: {pendingFile.name}
               </span>
               <button
-                onClick={removePendingFile}
                 className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full"
+                onClick={removePendingFile}
               >
                 <X className="h-4 w-4 text-blue-500 dark:text-blue-400" />
               </button>
@@ -298,17 +301,17 @@ export function AutoChat() {
           >
             <input
               ref={fileInputRef}
-              type="file"
               accept=".pdf,.txt"
-              onChange={handleFileChange}
               className="hidden"
+              type="file"
+              onChange={handleFileChange}
             />
             <Button
+              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-full flex-shrink-0 w-10 h-10 p-0 flex items-center justify-center"
+              disabled={isUploading || isLoading || !!pendingFile}
               type="button"
               variant="ghost"
               onClick={handleFileSelect}
-              disabled={isUploading || isLoading || !!pendingFile}
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-full flex-shrink-0 w-10 h-10 p-0 flex items-center justify-center"
             >
               {isUploading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

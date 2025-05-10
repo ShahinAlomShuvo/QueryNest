@@ -1,9 +1,5 @@
 /* eslint-disable no-console */
 
-/**
- * Creates a docs directory if it doesn't exist
- * @returns The path to the docs directory
- */
 export const createDocsDirectory = async (): Promise<string> => {
   try {
     const fs = require("fs");

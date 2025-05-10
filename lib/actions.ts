@@ -1,39 +1,36 @@
 /* eslint-disable no-console */
 "use server";
 
-import { readdirSync } from "fs";
-import { join } from "path";
-
 import { askWithRAG } from "./rag";
 
 // Get list of available document files from local directory
-export async function getAvailablePdfs() {
-  const docsDir = join(process.cwd(), "public", "docs");
+// export async function getAvailablePdfs() {
+//   const docsDir = join(process.cwd(), "public", "docs");
 
-  try {
-    // Read all files from docs directory
-    const files = readdirSync(docsDir);
+//   try {
+//     // Read all files from docs directory
+//     const files = readdirSync(docsDir);
 
-    // Filter only supported document files
-    const supportedFiles = files.filter(
-      (file) =>
-        file.toLowerCase().endsWith(".pdf") ||
-        file.toLowerCase().endsWith(".txt") ||
-        file.toLowerCase().endsWith(".docx") ||
-        file.toLowerCase().endsWith(".doc")
-    );
+//     // Filter only supported document files
+//     const supportedFiles = files.filter(
+//       (file) =>
+//         file.toLowerCase().endsWith(".pdf") ||
+//         file.toLowerCase().endsWith(".txt") ||
+//         file.toLowerCase().endsWith(".docx") ||
+//         file.toLowerCase().endsWith(".doc")
+//     );
 
-    // Return serializable data
-    return supportedFiles.map((file) => ({
-      fileName: file,
-      filePath: join(docsDir, file),
-    }));
-  } catch (error) {
-    console.error("Error reading docs directory:", error);
+//     // Return serializable data
+//     return supportedFiles.map((file) => ({
+//       fileName: file,
+//       filePath: join(docsDir, file),
+//     }));
+//   } catch (error) {
+//     console.error("Error reading docs directory:", error);
 
-    return [];
-  }
-}
+//     return [];
+//   }
+// }
 
 // Process RAG query against all documents
 export async function processAllDocsQuery(formData: FormData) {
