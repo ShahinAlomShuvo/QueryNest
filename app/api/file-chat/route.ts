@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
 import { join } from "path";
+
+import { NextRequest, NextResponse } from "next/server";
+
 import { askWithRAG } from "@/lib/rag";
 
 export async function POST(request: NextRequest) {
@@ -29,6 +31,7 @@ export async function POST(request: NextRequest) {
     } else {
       // For backward compatibility with older stored files
       const docsDir = join(process.cwd(), "public", "docs");
+
       fullPath = join(docsDir, fileName);
     }
 
