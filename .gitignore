@@ -33,3 +33,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# prisma
+.prisma
+generated/
+migrations/
+# dotenv
+.env
+# local env files
+.env.local
+# vercel
+.vercel
+# next.js   

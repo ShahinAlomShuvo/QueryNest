@@ -4,32 +4,44 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { Document } from "langchain/document";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
+import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
 import { createRetrievalChain } from "langchain/chains/retrieval";
 
 export const createRagChain = async (documents: Document[]) => {
   try {
-    // Split text into manageable chunks
+    // 1. Split documents into chunks
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 1000,
       chunkOverlap: 200,
     });
     const splitDocs = await splitter.splitDocuments(documents);
 
-    // Create embeddings and store in vector database
+    // 2. Initialize Embedding Model
     const embeddings = new GoogleGenerativeAIEmbeddings({
       apiKey: process.env.GEMINI_API_KEY,
       modelName: "models/embedding-001",
     });
 
-    const vectorstore = await MemoryVectorStore.fromDocuments(
+    // 3. Initialize PGVectorStore (PostgreSQL + pgvector)
+    const vectorstore = await PGVectorStore.fromDocuments(
       splitDocs,
-      embeddings
+      embeddings,
+      {
+        postgresConnectionOptions: {
+          connectionString: process.env.DATABASE_URL!,
+        },
+        tableName: "Document",
+        columns: {
+          idColumnName: "id",
+          contentColumnName: "content",
+          vectorColumnName: "vector",
+        },
+      },
     );
 
-    // Create prompt template for the LLM
+    // 4. Prompt template for the LLM
     const prompt = ChatPromptTemplate.fromTemplate(`
       Answer the question based only on the following context:
       <context>
@@ -50,21 +62,21 @@ export const createRagChain = async (documents: Document[]) => {
       - Make your answer as informative and well-formatted as possible
     `);
 
-    // Initialize the Gemini LLM
+    // 5. Initialize Gemini LLM
     const llm = new ChatGoogleGenerativeAI({
       apiKey: process.env.GEMINI_API_KEY,
       model: "gemini-1.5-pro",
       temperature: 0.2,
     });
 
-    // Create document processing chain
+    // 6. Document QA chain
     const documentChain = await createStuffDocumentsChain({
       llm,
       prompt,
       outputParser: new StringOutputParser(),
     });
 
-    // Create retrieval chain
+    // 7. Retriever chain
     const retriever = vectorstore.asRetriever();
     const retrievalChain = await createRetrievalChain({
       combineDocsChain: documentChain,
