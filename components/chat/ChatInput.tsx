@@ -36,90 +36,93 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   handleSubmit,
 }) => {
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4">
       {pendingFile && (
-        <div className="flex items-center gap-2 mb-2 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+        <div className="flex items-center gap-2 mb-3 bg-blue-50 dark:bg-blue-900/20 p-2.5 rounded-lg border border-blue-100 dark:border-blue-800">
           <FileText className="h-4 w-4 text-blue-500 dark:text-blue-400" />
           <span className="text-sm text-blue-700 dark:text-blue-300 flex-1">
             Added file: {pendingFile.name}
           </span>
           <button
-            className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full"
+            className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full transition-colors"
             onClick={removePendingFile}
           >
             <X className="h-4 w-4 text-blue-500 dark:text-blue-400" />
           </button>
         </div>
       )}
-      <form
-        className="flex gap-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2 shadow-sm"
-        onSubmit={handleSubmit}
-      >
-        <input
-          ref={fileInputRef}
-          accept=".pdf,.txt"
-          className="hidden"
-          type="file"
-          onChange={onFileChange}
-        />
-        <Button
-          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-full flex-shrink-0 w-10 h-10 p-0 flex items-center justify-center"
-          disabled={isUploading || isLoading || !!pendingFile}
-          type="button"
-          variant="ghost"
-          onClick={onFileSelect}
-        >
-          {isUploading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <Paperclip className="h-5 w-5" />
-          )}
-        </Button>
-        <textarea
-          ref={textareaRef}
-          className="flex-1 min-h-[40px] max-h-[120px] border-0 shadow-none focus-visible:ring-0 bg-transparent resize-none py-2 px-3 overflow-y-auto"
-          disabled={isLoading || isUploading}
-          placeholder={
-            isUploading
-              ? "Uploading file..."
-              : pendingFile
-                ? "Ask about this file..."
-                : "Ask me anything..."
-          }
-          rows={1}
-          style={{ height: "auto" }}
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            // Auto-resize the textarea
-            e.target.style.height = "auto";
-            e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSubmit(e);
+      <form className="relative group" onSubmit={handleSubmit}>
+        <div className="relative flex flex-col bg-white dark:bg-gray-800/90 rounded-xl border border-gray-200/80 dark:border-gray-700/80 shadow-lg">
+          <textarea
+            ref={textareaRef}
+            className="w-full min-h-[100px] max-h-[300px] border-0 outline-none focus:outline-none focus:ring-0 bg-transparent resize-none py-4 px-4 overflow-y-auto text-base placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            disabled={isLoading || isUploading}
+            placeholder={
+              isUploading
+                ? "Uploading file..."
+                : pendingFile
+                  ? "Ask about this file..."
+                  : "Message QueryNest..."
             }
-          }}
-        />
-        <Button
-          className="rounded-full w-10 h-10 p-0 flex items-center justify-center"
-          color="secondary"
-          disabled={isLoading || isUploading || (!input.trim() && !pendingFile)}
-          type="submit"
-        >
-          {isLoading ? (
-            <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
-          ) : (
-            <Send className="h-5 w-5" />
-          )}
-        </Button>
+            rows={1}
+            style={{ height: "auto" }}
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              // Auto-resize the textarea
+              e.target.style.height = "auto";
+              e.target.style.height =
+                Math.min(e.target.scrollHeight, 300) + "px";
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+          />
+          <div className="flex justify-between items-center p-2">
+            <input
+              ref={fileInputRef}
+              accept=".pdf,.txt"
+              className="hidden"
+              type="file"
+              onChange={onFileChange}
+            />
+            <Button
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg flex-shrink-0 w-10 h-10 p-0 flex items-center justify-center"
+              disabled={isUploading || isLoading || !!pendingFile}
+              type="button"
+              variant="ghost"
+              onClick={onFileSelect}
+            >
+              {isUploading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Paperclip className="h-5 w-5" />
+              )}
+            </Button>
+            <Button
+              className={`rounded-lg w-10 h-10 p-0 flex items-center justify-center ${
+                !input.trim() && !pendingFile
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+              color="secondary"
+              disabled={
+                isLoading || isUploading || (!input.trim() && !pendingFile)
+              }
+              type="submit"
+            >
+              {isLoading ? (
+                <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
+        </div>
       </form>
-      <p className="text-xs text-center mt-2 text-gray-500">
-        {pendingFile
-          ? "Enter your question and press send"
-          : "Upload a file or ask a question about your documents"}
-      </p>
     </div>
   );
 };

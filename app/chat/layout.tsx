@@ -6,12 +6,11 @@ export default function ChatLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      {/* Fixed sidebar, only visible on chat pages */}
+    <div className="flex h-[calc(100vh-65px)] w-full overflow-hidden">
       <Sidebar />
-      
+
       {/* Main content area */}
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
   );
-} 
+}
