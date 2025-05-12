@@ -1,13 +1,14 @@
+/* eslint-disable no-console */
 "use client";
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@heroui/button";
-import { Input } from "@heroui/input";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Send, Bot, User, Paperclip, Loader2, X, FileText } from "lucide-react";
+import { Bot, Loader2 } from "lucide-react";
 
-import { MarkdownRenderer } from "../ui/markdown-renderer";
+import { MessageList } from "./MessageList";
+import { ChatInput } from "./ChatInput";
 
 import {
   getConversation,
@@ -31,6 +32,43 @@ interface ConversationData {
   messages: Message[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+function LoadingUI() {
+  return (
+    <div className="flex flex-col h-full w-full items-center justify-center">
+      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <p className="mt-4 text-gray-600 dark:text-gray-300">
+        Loading conversation...
+      </p>
+    </div>
+  );
+}
+
+function ErrorUI({ error, onBack }: { error: string; onBack: () => void }) {
+  return (
+    <div className="flex flex-col h-full w-full items-center justify-center">
+      <p className="text-red-500">{error}</p>
+      <Button className="mt-4" color="secondary" onClick={onBack}>
+        Go back to Chat
+      </Button>
+    </div>
+  );
+}
+
+function WelcomeUI() {
+  return (
+    <div className="h-full flex flex-col items-center justify-center">
+      <div className="w-16 h-16 rounded-full bg-[#8e24aa] flex items-center justify-center mb-6">
+        <Bot className="w-9 h-9 text-white" />
+      </div>
+      <h2 className="text-2xl font-semibold mb-2">QueryNest</h2>
+      <p className="text-gray-600 dark:text-gray-300 max-w-md text-center mb-8">
+        I can answer questions based on your documents. What would you like to
+        know?
+      </p>
+    </div>
+  );
 }
 
 export function ConversationChat({
@@ -168,21 +206,28 @@ export function ConversationChat({
     if (messages.length === 0 && conversation) {
       // Create title from first ~5 words of the message or first 40 chars
       const words = content.split(/\s+/);
-      const title = words.slice(0, 5).join(' ');
-      const shortTitle = title.length > 40 ? title.substring(0, 40) + "..." : title;
-      
+      const title = words.slice(0, 5).join(" ");
+      const shortTitle =
+        title.length > 40 ? title.substring(0, 40) + "..." : title;
+
       try {
         // Update conversation title in the database
-        const result = await updateConversationTitle(conversationId, shortTitle);
-        
+        const result = await updateConversationTitle(
+          conversationId,
+          shortTitle,
+        );
+
         if (result.success) {
           // Update local state
-          setConversation(prev => prev ? { ...prev, title: shortTitle } : null);
-          
+          setConversation((prev) =>
+            prev ? { ...prev, title: shortTitle } : null,
+          );
+
           // Dispatch a custom event for sidebar to listen to
-          const updateEvent = new CustomEvent('conversation-title-updated', {
-            detail: { id: conversationId, title: shortTitle }
+          const updateEvent = new CustomEvent("conversation-title-updated", {
+            detail: { id: conversationId, title: shortTitle },
           });
+
           window.dispatchEvent(updateEvent);
         }
       } catch (error) {
@@ -326,236 +371,52 @@ export function ConversationChat({
     if (textareaRef.current) {
       const adjustHeight = () => {
         const textarea = textareaRef.current;
+
         if (textarea) {
-          textarea.style.height = 'auto';
-          textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+          textarea.style.height = "auto";
+          textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
         }
       };
-      
+
       adjustHeight();
-      
+
       // Add event listener for window resize
-      window.addEventListener('resize', adjustHeight);
-      
+      window.addEventListener("resize", adjustHeight);
+
       // Clean up event listener
-      return () => window.removeEventListener('resize', adjustHeight);
+      return () => window.removeEventListener("resize", adjustHeight);
     }
   }, [input]);
 
   if (isInitializing) {
-    return (
-      <div className="flex flex-col h-full w-full items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="mt-4 text-gray-600 dark:text-gray-300">
-          Loading conversation...
-        </p>
-      </div>
-    );
+    return <LoadingUI />;
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col h-full w-full items-center justify-center">
-        <p className="text-red-500">{error}</p>
-        <Button
-          className="mt-4"
-          color="secondary"
-          onClick={() => router.push("/chat")}
-        >
-          Go back to Chat
-        </Button>
-      </div>
-    );
+    return <ErrorUI error={error} onBack={() => router.push("/chat")} />;
   }
 
   return (
     <div className="flex flex-col h-full w-full relative">
       <div className="flex-1 overflow-auto px-4 sm:px-8 py-4 pb-32">
-        {messages.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-[#8e24aa] flex items-center justify-center mb-6">
-              <Bot className="w-9 h-9 text-white" />
-            </div>
-            <h2 className="text-2xl font-semibold mb-2">QueryNest</h2>
-            <p className="text-gray-600 dark:text-gray-300 max-w-md text-center mb-8">
-              I can answer questions based on your documents. What would you
-              like to know?
-            </p>
-          </div>
-        )}
-
-        <div className="max-w-3xl mx-auto space-y-6">
-          {messages.map((message, index) => (
-            <div
-              key={message.id || index}
-              className={`flex items-start gap-4 ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              {message.role === "assistant" && (
-                <div className="w-8 h-8 rounded-full bg-[#8e24aa] flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-5 h-5 text-white" />
-                </div>
-              )}
-
-              <div
-                className={`flex flex-col max-w-[80%] ${
-                  message.role === "user" ? "items-end" : "items-start"
-                }`}
-              >
-                <div
-                  className={`p-4 rounded-2xl ${
-                    message.role === "user"
-                      ? "bg-[#e9e9fd] dark:bg-[#4a4a7c] text-[#1a1a1a] dark:text-white rounded-tr-none"
-                      : "bg-[#f3f3f3] dark:bg-[#383838] rounded-tl-none"
-                  }`}
-                >
-                  {message.fileAttachment && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        <span className="text-sm font-medium">
-                          {message.fileAttachment}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {message.role === "assistant" ? (
-                    <MarkdownRenderer
-                      className="prose prose-sm dark:prose-invert max-w-none"
-                      content={message.content}
-                    />
-                  ) : (
-                    <p className="whitespace-pre-wrap">{message.content}</p>
-                  )}
-                </div>
-              </div>
-
-              {message.role === "user" && (
-                <div className="w-8 h-8 rounded-full bg-[#4285f4] flex items-center justify-center flex-shrink-0">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-              )}
-            </div>
-          ))}
-
-          {isLoading && (
-            <div className="flex items-start gap-4 justify-start">
-              <div className="w-8 h-8 rounded-full bg-[#8e24aa] flex items-center justify-center flex-shrink-0">
-                <Bot className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex flex-col max-w-[80%] items-start">
-                <div className="p-4 rounded-2xl bg-[#f3f3f3] dark:bg-[#383838] rounded-tl-none">
-                  <div className="flex space-x-2">
-                    <div className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" />
-                    <div
-                      className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.2s" }}
-                    />
-                    <div
-                      className="h-2 w-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"
-                      style={{ animationDelay: "0.4s" }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
+        {messages.length === 0 && <WelcomeUI />}
+        <MessageList isLoading={isLoading} messages={messages} />
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Fixed chat input at bottom */}
       <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
-        <div className="max-w-3xl mx-auto">
-          {pendingFile && (
-            <div className="flex items-center gap-2 mb-2 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
-              <FileText className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-              <span className="text-sm text-blue-700 dark:text-blue-300 flex-1">
-                Added file: {pendingFile.name}
-              </span>
-              <button
-                className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full"
-                onClick={removePendingFile}
-              >
-                <X className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-              </button>
-            </div>
-          )}
-          <form
-            className="flex gap-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2 shadow-sm"
-            onSubmit={handleSubmit}
-          >
-            <input
-              ref={fileInputRef}
-              accept=".pdf,.txt"
-              className="hidden"
-              type="file"
-              onChange={handleFileChange}
-            />
-            <Button
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-full flex-shrink-0 w-10 h-10 p-0 flex items-center justify-center"
-              disabled={isUploading || isLoading || !!pendingFile}
-              type="button"
-              variant="ghost"
-              onClick={handleFileSelect}
-            >
-              {isUploading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Paperclip className="h-5 w-5" />
-              )}
-            </Button>
-            <textarea
-              ref={textareaRef}
-              className="flex-1 min-h-[40px] max-h-[120px] border-0 shadow-none focus-visible:ring-0 bg-transparent resize-none py-2 px-3 overflow-y-auto"
-              disabled={isLoading || isUploading}
-              placeholder={
-                isUploading
-                  ? "Uploading file..."
-                  : pendingFile
-                    ? "Ask about this file..."
-                    : "Ask me anything..."
-              }
-              rows={1}
-              style={{ height: 'auto' }}
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                // Auto-resize the textarea
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-            />
-            <Button
-              className="rounded-full w-10 h-10 p-0 flex items-center justify-center"
-              color="secondary"
-              disabled={
-                isLoading || isUploading || (!input.trim() && !pendingFile)
-              }
-              type="submit"
-            >
-              {isLoading ? (
-                <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
-              ) : (
-                <Send className="h-5 w-5" />
-              )}
-            </Button>
-          </form>
-          <p className="text-xs text-center mt-2 text-gray-500">
-            {pendingFile
-              ? "Enter your question and press send"
-              : "Upload a file or ask a question about your documents"}
-          </p>
-        </div>
+        <ChatInput
+          fileInputRef={fileInputRef}
+          handleSubmit={handleSubmit}
+          input={input}
+          isLoading={isLoading}
+          isUploading={isUploading}
+          pendingFile={pendingFile}
+          removePendingFile={removePendingFile}
+          setInput={setInput}
+          textareaRef={textareaRef}
+          onFileChange={handleFileChange}
+          onFileSelect={handleFileSelect}
+        />
       </div>
     </div>
   );
