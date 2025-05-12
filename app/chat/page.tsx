@@ -38,7 +38,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="w-full min-h-[calc(100vh-80px)] flex flex-col items-center justify-center p-4">
+    <div className="w-full h-full flex flex-col items-center justify-center p-4">
       {status === "loading" ? (
         <div className="flex flex-col items-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />

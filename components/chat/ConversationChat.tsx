@@ -56,6 +56,7 @@ export function ConversationChat({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
   const { status } = useSession();
 
@@ -319,6 +320,28 @@ export function ConversationChat({
     }
   };
 
+  // Add a useEffect for textarea auto-resize on mount
+  useEffect(() => {
+    // Auto-resize textarea on initial render and when input changes
+    if (textareaRef.current) {
+      const adjustHeight = () => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+          textarea.style.height = 'auto';
+          textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+      };
+      
+      adjustHeight();
+      
+      // Add event listener for window resize
+      window.addEventListener('resize', adjustHeight);
+      
+      // Clean up event listener
+      return () => window.removeEventListener('resize', adjustHeight);
+    }
+  }, [input]);
+
   if (isInitializing) {
     return (
       <div className="flex flex-col h-full w-full items-center justify-center">
@@ -346,8 +369,8 @@ export function ConversationChat({
   }
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <div className="flex-1 overflow-auto px-4 sm:px-8 py-4">
+    <div className="flex flex-col h-full w-full relative">
+      <div className="flex-1 overflow-auto px-4 sm:px-8 py-4 pb-32">
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-[#8e24aa] flex items-center justify-center mb-6">
@@ -444,7 +467,8 @@ export function ConversationChat({
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+      {/* Fixed chat input at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
         <div className="max-w-3xl mx-auto">
           {pendingFile && (
             <div className="flex items-center gap-2 mb-2 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
@@ -461,7 +485,7 @@ export function ConversationChat({
             </div>
           )}
           <form
-            className="flex gap-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2"
+            className="flex gap-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2 shadow-sm"
             onSubmit={handleSubmit}
           >
             <input
@@ -484,8 +508,9 @@ export function ConversationChat({
                 <Paperclip className="h-5 w-5" />
               )}
             </Button>
-            <Input
-              className="flex-1 border-0 shadow-none focus-visible:ring-0 bg-transparent"
+            <textarea
+              ref={textareaRef}
+              className="flex-1 min-h-[40px] max-h-[120px] border-0 shadow-none focus-visible:ring-0 bg-transparent resize-none py-2 px-3 overflow-y-auto"
               disabled={isLoading || isUploading}
               placeholder={
                 isUploading
@@ -494,8 +519,21 @@ export function ConversationChat({
                     ? "Ask about this file..."
                     : "Ask me anything..."
               }
+              rows={1}
+              style={{ height: 'auto' }}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // Auto-resize the textarea
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }
+              }}
             />
             <Button
               className="rounded-full w-10 h-10 p-0 flex items-center justify-center"
