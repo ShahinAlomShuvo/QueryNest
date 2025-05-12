@@ -3,21 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ThemeSwitch } from "@/components/theme-switch";
-import {
-  Bot,
-  Plus,
-  LayoutGrid,
-  Settings,
-  User,
-  Menu,
-  X,
-  FileText,
-} from "@/components/icons";
+
+import { Bot, Plus, Menu, X } from "@/components/icons";
 
 export function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+
+  // Dummy chat history for demonstration
+  const chatHistory = [
+    { id: "1", title: "Chat about React components", date: "2 days ago" },
+    { id: "2", title: "TypeScript interfaces", date: "Yesterday" },
+    { id: "3", title: "NextJS configuration", date: "Today" },
+  ];
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
@@ -27,9 +25,9 @@ export function Sidebar() {
     <>
       {/* Mobile menu button */}
       <button
-        onClick={toggleSidebar}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white dark:bg-gray-800 shadow-md"
         aria-label="Menu"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white dark:bg-gray-800 shadow-md"
+        onClick={toggleSidebar}
       >
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
@@ -61,51 +59,38 @@ export function Sidebar() {
         {/* New chat button */}
         <div className="p-4">
           <Link
-            href="/chat"
             className="w-full flex items-center justify-center gap-2 bg-[#8e24aa] hover:bg-[#7b1fa2] text-white px-4 py-2.5 rounded-md transition-colors"
+            href="/chat"
           >
             <Plus className="w-4 h-4" />
             <span>New Chat</span>
           </Link>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          <Link
-            href="/"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-md ${
-              pathname === "/"
-                ? "bg-gray-100 dark:bg-gray-700"
-                : "hover:bg-gray-100 dark:hover:bg-gray-700"
-            }`}
-          >
-            <LayoutGrid className="w-5 h-5" />
-            <span>Home</span>
-          </Link>
-
-          <Link
-            href="/chat"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-md ${
-              pathname === "/chat"
-                ? "bg-gray-100 dark:bg-gray-700"
-                : "hover:bg-gray-100 dark:hover:bg-gray-700"
-            }`}
-          >
-            <Bot className="w-5 h-5" />
-            <span>Chat</span>
-          </Link>
-        </nav>
-
-        {/* Bottom section */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                <User className="w-5 h-5" />
-              </div>
-              <span>User</span>
-            </div>
-            <ThemeSwitch />
+        {/* Chat History */}
+        <div className="flex-1 p-4 overflow-y-auto">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+            Recent Chats
+          </h3>
+          <div className="space-y-1">
+            {chatHistory.map((chat) => (
+              <Link
+                key={chat.id}
+                className={`flex flex-col px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                  pathname === `/chat/${chat.id}`
+                    ? "bg-gray-100 dark:bg-gray-700"
+                    : ""
+                }`}
+                href={`/chat/${chat.id}`}
+              >
+                <span className="text-sm font-medium truncate">
+                  {chat.title}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {chat.date}
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </aside>

@@ -13,4 +13,5 @@ export {
   FileText,
   Paperclip,
   Loader2,
+  LogOut,
 } from "lucide-react";

@@ -7,6 +7,7 @@ import { Providers } from "./providers";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { Sidebar } from "@/components/sidebar";
+import { Navbar } from "@/components/navbar";
 
 export const metadata: Metadata = {
   title: {
@@ -20,9 +21,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
+    { media: "(prefers-color-scheme: dark)", color: "#171717" },
   ],
 };
 
@@ -43,7 +46,10 @@ export default function RootLayout({
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
           <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
             <Sidebar />
-            <main className="flex-1">{children}</main>
+            <div className="flex flex-col flex-1">
+              <Navbar />
+              <main className="flex-1">{children}</main>
+            </div>
           </div>
         </Providers>
       </body>
