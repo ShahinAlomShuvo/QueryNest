@@ -296,6 +296,7 @@ export function ConversationChat({
       // If there's a pending file, use it for the query
       if (pendingFile) {
         formData.append("filePath", pendingFile.fullPath);
+        formData.append("conversationId", conversationId);
 
         // Call file-specific chat API
         const response = await fetch("/api/file-chat", {
