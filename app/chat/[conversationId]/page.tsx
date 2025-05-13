@@ -6,15 +6,13 @@ import { ConversationChat } from "@/components/chat/ConversationChat";
 export const dynamic = "force-dynamic";
 
 interface ChatPageProps {
-  params: {
-    conversationId: Promise<string>;
-  };
+  params: Promise<{ conversationId: string }>;
 }
 
 export async function generateMetadata({
   params,
 }: ChatPageProps): Promise<Metadata> {
-  const conversationId = await params.conversationId;
+  const { conversationId } = await params;
   const result = await getConversation(conversationId);
   const title =
     result.success && result.conversation
@@ -27,8 +25,8 @@ export async function generateMetadata({
 }
 
 export default async function ConversationPage({ params }: ChatPageProps) {
-  const conversationId = await params.conversationId;
-  
+  const { conversationId } = await params;
+
   return (
     <div className="h-full w-full">
       <ConversationChat conversationId={conversationId} />
