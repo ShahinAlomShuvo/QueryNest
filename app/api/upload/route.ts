@@ -1,64 +1,90 @@
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
-
 import { NextRequest, NextResponse } from "next/server";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 
 export async function POST(request: NextRequest) {
   try {
-    // Create temp directory if it doesn't exist
-    const tempDir = join(process.cwd(), "temp-uploads");
-
-    if (!existsSync(tempDir)) {
-      await mkdir(tempDir, { recursive: true });
-    }
-
-    // Get form data from the request
     const formData = await request.formData();
     const file = formData.get("file") as File;
+    const conversationId = formData.get("conversationId") as string;
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate file size (limit to 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    if (!conversationId) {
       return NextResponse.json(
-        { error: "File too large. Maximum size is 10MB" },
-        { status: 400 }
+        { error: "No conversation ID provided" },
+        { status: 400 },
       );
     }
 
-    // Validate file type
-    const fileName = file.name.toLowerCase();
+    // Get file content as buffer
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
-    if (!fileName.endsWith(".pdf") && !fileName.endsWith(".txt")) {
-      return NextResponse.json(
-        { error: "Only PDF and TXT files are supported" },
-        { status: 400 }
-      );
+    // Process based on file type
+    let textContent = "";
+
+    if (file.name.toLowerCase().endsWith(".pdf")) {
+      // For PDF files
+      const pdf = require("pdf-parse/lib/pdf-parse.js");
+      const pdfData = await pdf(buffer);
+
+      textContent = pdfData.text;
+    } else {
+      // For text files
+      textContent = buffer.toString("utf-8");
     }
 
-    // Create a unique filename to prevent overwrites
-    const uniqueFileName = `${Date.now()}-${file.name}`;
-    const filePath = join(tempDir, uniqueFileName);
+    // Split text into chunks
+    const textSplitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 1000,
+      chunkOverlap: 200,
+    });
 
-    // Convert the file to buffer and save it
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const docs = await textSplitter.createDocuments([textContent]);
 
-    await writeFile(filePath, buffer);
+    // Add metadata to each document
+    const docsWithMetadata = docs.map((doc) => ({
+      ...doc,
+      metadata: {
+        fileName: file.name,
+        conversationId,
+        uploadedAt: new Date().toISOString(),
+      },
+    }));
+
+    // Initialize embeddings with Gemini
+    const embeddings = new GoogleGenerativeAIEmbeddings({
+      apiKey: process.env.GEMINI_API_KEY,
+      modelName: "models/embedding-001",
+    });
+
+    // Store vectors in PostgreSQL
+    await PGVectorStore.fromDocuments(docsWithMetadata, embeddings, {
+      postgresConnectionOptions: {
+        connectionString: process.env.DATABASE_URL!,
+      },
+      tableName: "Document",
+      columns: {
+        idColumnName: "id",
+        contentColumnName: "content",
+        vectorColumnName: "embedding",
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      fileName: uniqueFileName,
-      filePath,
+      fileName: file.name,
     });
-  } catch (error) {
-    console.error("Error uploading file:", error);
+  } catch (error: any) {
+    console.error("Error processing file:", error);
 
     return NextResponse.json(
-      { error: "Failed to upload file" },
-      { status: 500 }
+      { error: error.message || "Error processing file" },
+      { status: 500 },
     );
   }
 }

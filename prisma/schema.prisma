@@ -59,9 +59,12 @@ model VerificationToken {
 }
 
 model Document {
-  id        Int      @id @default(autoincrement())
-  content   String
-  // vector    Vector   @vector(dim: 768)
+  id              String       @id @default(cuid())
+  content         String       @db.Text
+  metadata        Json
+  embedding       Unsupported("vector(1536)")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
 // New models for chat history

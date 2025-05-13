@@ -159,9 +159,18 @@ export function ConversationChat({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+
+      // File size validation
+      if (file.size > 10 * 1024 * 1024) {
+        // 10MB limit
+        alert("File too large. Maximum size is 10MB");
+
+        return;
+      }
+
+      // File type validation
       const fileType = file.name.split(".").pop()?.toLowerCase();
 
-      // Validate file type
       if (fileType !== "pdf" && fileType !== "txt") {
         alert("Please select a PDF or text file.");
 
@@ -174,27 +183,31 @@ export function ConversationChat({
         const formData = new FormData();
 
         formData.append("file", file);
+        formData.append("conversationId", conversationId);
 
+        // Upload and process file
         const response = await fetch("/api/upload", {
           method: "POST",
           body: formData,
         });
 
-        const data = await response.json();
+        if (!response.ok) {
+          const error = await response.json();
 
-        if (response.ok) {
-          // Set as pending file (don't add to chat yet)
-          setPendingFile({
-            name: file.name,
-            path: data.fileName,
-            fullPath: data.filePath,
-          });
-        } else {
-          alert(data.error || "Failed to upload file");
+          throw new Error(error.error || "Failed to process file");
         }
-      } catch (error) {
+
+         await response.json();
+
+        // Set as pending file (just for UI, we don't store the actual file)
+        setPendingFile({
+          name: file.name,
+          path: file.name, // We don't need actual path anymore
+          fullPath: file.name, // We don't need actual path anymore
+        });
+      } catch (error: any) {
         console.error("Upload error:", error);
-        alert("An error occurred while uploading the file");
+        alert(error.message || "An error occurred while processing the file");
       } finally {
         setIsUploading(false);
       }
