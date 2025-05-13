@@ -136,13 +136,16 @@ export function ConversationChat({
     }
   }, [conversationId, router]);
 
+  useEffect(() => {
+    scrollToBottom();
+    if (isLoading) {
+      scrollToBottom();
+    }
+  }, [messages, isLoading]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const handleFileSelect = () => {
     if (fileInputRef.current) {
@@ -296,7 +299,8 @@ export function ConversationChat({
       formData.append("conversationId", conversationId);
 
       // Check if conversation has a file or a file is being uploaded now
-      const hasFile = pendingFile || (conversation && conversation.hasAttachment);
+      const hasFile =
+        pendingFile || (conversation && conversation.hasAttachment);
 
       if (conversationId && hasFile) {
         console.log("Using file-chat with uploaded document for conversation");
@@ -408,13 +412,13 @@ export function ConversationChat({
   }
 
   return (
-    <div className="flex flex-col h-full w-full relative">
-      <div className="flex-1 overflow-auto px-4 sm:px-8 py-4 pb-32">
+    <div className="flex flex-col h-full w-full">
+      <div className="flex-1 overflow-auto px-4 sm:px-8 py-4">
         {messages.length === 0 && <WelcomeUI />}
         <MessageList isLoading={isLoading} messages={messages} />
         <div ref={messagesEndRef} />
       </div>
-      <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
+      <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
         <ChatInput
           fileInputRef={fileInputRef}
           handleSubmit={handleSubmit}
