@@ -24,6 +24,7 @@ export const createRagChain = async (documents: Document[]) => {
       modelName: "models/embedding-001",
     });
 
+    console.log("This is for testing");
     // 3. Initialize PGVectorStore (PostgreSQL + pgvector)
     const vectorstore = await PGVectorStore.fromDocuments(
       splitDocs,
@@ -36,7 +37,7 @@ export const createRagChain = async (documents: Document[]) => {
         columns: {
           idColumnName: "id",
           contentColumnName: "content",
-          vectorColumnName: "vector",
+          vectorColumnName: "embedding",
         },
       },
     );

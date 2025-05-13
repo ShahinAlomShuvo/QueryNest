@@ -29,6 +29,7 @@ interface ConversationData {
   id: string;
   title: string;
   userId: string;
+  hasAttachment?: boolean;
   messages: Message[];
   createdAt: Date;
   updatedAt: Date;
@@ -197,7 +198,7 @@ export function ConversationChat({
           throw new Error(error.error || "Failed to process file");
         }
 
-         await response.json();
+        await response.json();
 
         // Set as pending file (just for UI, we don't store the actual file)
         setPendingFile({
@@ -292,13 +293,14 @@ export function ConversationChat({
       const formData = new FormData();
 
       formData.append("question", userContent);
+      formData.append("conversationId", conversationId);
 
-      // If there's a pending file, use it for the query
-      if (pendingFile) {
-        formData.append("filePath", pendingFile.fullPath);
-        formData.append("conversationId", conversationId);
+      // Check if conversation has a file or a file is being uploaded now
+      const hasFile = pendingFile || (conversation && conversation.hasAttachment);
 
-        // Call file-specific chat API
+      if (conversationId && hasFile) {
+        console.log("Using file-chat with uploaded document for conversation");
+        // Use /api/file-chat if conversationId exists and we have a file
         const response = await fetch("/api/file-chat", {
           method: "POST",
           body: formData,
@@ -329,10 +331,9 @@ export function ConversationChat({
         // Clear pending file after sending
         setPendingFile(null);
       } else {
-        // Regular RAG query
+        // Regular RAG query (public/docs fallback)
+        console.log("Using public documents as fallback");
         const result = await processAllDocsQuery(formData);
-
-        // Extract text or error message
         const responseText =
           "error" in result
             ? result.error
@@ -349,11 +350,7 @@ export function ConversationChat({
         setMessages((prev) => [...prev, assistantMessage]);
 
         // Save assistant message to database
-        await addMessageToConversation(
-          conversationId,
-          "assistant",
-          responseText,
-        );
+        // No conversationId, so skip DB save
       }
     } catch (error: any) {
       console.error("Error:", error);

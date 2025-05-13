@@ -69,13 +69,14 @@ model Document {
 
 // New models for chat history
 model Conversation {
-  id          String    @id @default(cuid())
-  title       String    @default("New Chat")
-  userId      String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages    Message[]
+  id              String    @id @default(cuid())
+  title           String    @default("New Chat")
+  userId          String
+  fileAttachment  String?   // Track if a file has been uploaded to this conversation
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages        Message[]
 }
 
 model Message {
