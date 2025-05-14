@@ -16,6 +16,7 @@ import {
   processAllDocsQuery,
   updateConversationTitle,
 } from "@/lib/actions";
+import { showToast } from "@/components/ui/Toast";
 
 interface Message {
   id: string;
@@ -167,7 +168,7 @@ export function ConversationChat({
       // File size validation
       if (file.size > 10 * 1024 * 1024) {
         // 10MB limit
-        alert("File too large. Maximum size is 10MB");
+        showToast("File too large. Maximum size is 10MB", "error");
 
         return;
       }
@@ -176,7 +177,7 @@ export function ConversationChat({
       const fileType = file.name.split(".").pop()?.toLowerCase();
 
       if (fileType !== "pdf" && fileType !== "txt") {
-        alert("Please select a PDF or text file.");
+        showToast("Please select a PDF or text file.", "error");
 
         return;
       }
@@ -211,7 +212,7 @@ export function ConversationChat({
         });
       } catch (error: any) {
         console.error("Upload error:", error);
-        alert(error.message || "An error occurred while processing the file");
+        showToast(error.message || "An error occurred while processing the file", "error");
       } finally {
         setIsUploading(false);
       }

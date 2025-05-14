@@ -3,6 +3,7 @@ import { Metadata, Viewport } from "next";
 import clsx from "clsx";
 
 import { Providers } from "./providers";
+import { Toast } from "@/components/ui/Toast";
 
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
@@ -49,6 +50,7 @@ export default function RootLayout({
               <main className="flex-1">{children}</main>
             </div>
           </div>
+          <Toast />
         </Providers>
       </body>
     </html>
