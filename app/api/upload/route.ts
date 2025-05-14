@@ -1,7 +1,10 @@
+/* eslint-disable no-console */
 import { NextRequest, NextResponse } from "next/server";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
+
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,10 +54,12 @@ export async function POST(request: NextRequest) {
       ...doc,
       metadata: {
         fileName: file.name,
-        conversationId,
+        conversationId: String(conversationId),
         uploadedAt: new Date().toISOString(),
       },
     }));
+
+    console.log("Uploading docsWithMetadata:", docsWithMetadata);
 
     // Initialize embeddings with Gemini
     const embeddings = new GoogleGenerativeAIEmbeddings({
@@ -74,6 +79,17 @@ export async function POST(request: NextRequest) {
         vectorColumnName: "embedding",
       },
     });
+
+    // Update conversation to mark it has an attachment
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { hasAttachment: true },
+    });
+
+    console.log(
+      "Successfully embedded and saved uploaded document with conversationId:",
+      conversationId,
+    );
 
     return NextResponse.json({
       success: true,

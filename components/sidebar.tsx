@@ -5,16 +5,10 @@ import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import {
-  Plus,
-  Menu,
-  X,
-  Loader2,
-  Trash,
-  MessageSquare,
-} from "lucide-react";
+import { Plus, Menu, X, Loader2, Trash, MessageSquare } from "lucide-react";
 import { useSession } from "next-auth/react";
 
+import { showConfirm } from "@/components/ui/Toast";
 import {
   getUserConversations,
   deleteConversation,
@@ -115,23 +109,26 @@ export function Sidebar() {
   };
 
   const handleDeleteConversation = async (id: string) => {
-    if (confirm("Are you sure you want to delete this conversation?")) {
-      try {
-        const result = await deleteConversation(id);
+    showConfirm(
+      "Are you sure you want to delete this conversation?",
+      async () => {
+        try {
+          const result = await deleteConversation(id);
 
-        if (result.success) {
-          // Update local state
-          setConversations((prev) => prev.filter((conv) => conv.id !== id));
+          if (result.success) {
+            // Update local state
+            setConversations((prev) => prev.filter((conv) => conv.id !== id));
 
-          // If we're currently on this chat, navigate to the main chat page
-          if (pathname === `/chat/${id}`) {
-            router.push("/chat");
+            // If we're currently on this chat, navigate to the main chat page
+            if (pathname === `/chat/${id}`) {
+              router.push("/chat");
+            }
           }
+        } catch (error) {
+          console.error("Error deleting conversation:", error);
         }
-      } catch (error) {
-        console.error("Error deleting conversation:", error);
-      }
-    }
+      },
+    );
   };
 
   const formatDate = (date: Date) => {

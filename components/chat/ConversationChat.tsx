@@ -16,6 +16,7 @@ import {
   processAllDocsQuery,
   updateConversationTitle,
 } from "@/lib/actions";
+import { showToast } from "@/components/ui/Toast";
 
 interface Message {
   id: string;
@@ -29,6 +30,7 @@ interface ConversationData {
   id: string;
   title: string;
   userId: string;
+  hasAttachment?: boolean;
   messages: Message[];
   createdAt: Date;
   updatedAt: Date;
@@ -135,13 +137,16 @@ export function ConversationChat({
     }
   }, [conversationId, router]);
 
+  useEffect(() => {
+    scrollToBottom();
+    if (isLoading) {
+      scrollToBottom();
+    }
+  }, [messages, isLoading]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const handleFileSelect = () => {
     if (fileInputRef.current) {
@@ -163,7 +168,7 @@ export function ConversationChat({
       // File size validation
       if (file.size > 10 * 1024 * 1024) {
         // 10MB limit
-        alert("File too large. Maximum size is 10MB");
+        showToast("File too large. Maximum size is 10MB", "error");
 
         return;
       }
@@ -172,7 +177,7 @@ export function ConversationChat({
       const fileType = file.name.split(".").pop()?.toLowerCase();
 
       if (fileType !== "pdf" && fileType !== "txt") {
-        alert("Please select a PDF or text file.");
+        showToast("Please select a PDF or text file.", "error");
 
         return;
       }
@@ -197,7 +202,7 @@ export function ConversationChat({
           throw new Error(error.error || "Failed to process file");
         }
 
-         await response.json();
+        await response.json();
 
         // Set as pending file (just for UI, we don't store the actual file)
         setPendingFile({
@@ -207,7 +212,7 @@ export function ConversationChat({
         });
       } catch (error: any) {
         console.error("Upload error:", error);
-        alert(error.message || "An error occurred while processing the file");
+        showToast(error.message || "An error occurred while processing the file", "error");
       } finally {
         setIsUploading(false);
       }
@@ -292,13 +297,15 @@ export function ConversationChat({
       const formData = new FormData();
 
       formData.append("question", userContent);
+      formData.append("conversationId", conversationId);
 
-      // If there's a pending file, use it for the query
-      if (pendingFile) {
-        formData.append("filePath", pendingFile.fullPath);
-        formData.append("conversationId", conversationId);
+      // Check if conversation has a file or a file is being uploaded now
+      const hasFile =
+        pendingFile || (conversation && conversation.hasAttachment);
 
-        // Call file-specific chat API
+      if (conversationId && hasFile) {
+        console.log("Using file-chat with uploaded document for conversation");
+        // Use /api/file-chat if conversationId exists and we have a file
         const response = await fetch("/api/file-chat", {
           method: "POST",
           body: formData,
@@ -329,10 +336,9 @@ export function ConversationChat({
         // Clear pending file after sending
         setPendingFile(null);
       } else {
-        // Regular RAG query
+        // Regular RAG query (public/docs fallback)
+        console.log("Using public documents as fallback");
         const result = await processAllDocsQuery(formData);
-
-        // Extract text or error message
         const responseText =
           "error" in result
             ? result.error
@@ -349,11 +355,7 @@ export function ConversationChat({
         setMessages((prev) => [...prev, assistantMessage]);
 
         // Save assistant message to database
-        await addMessageToConversation(
-          conversationId,
-          "assistant",
-          responseText,
-        );
+        // No conversationId, so skip DB save
       }
     } catch (error: any) {
       console.error("Error:", error);
@@ -411,13 +413,13 @@ export function ConversationChat({
   }
 
   return (
-    <div className="flex flex-col h-full w-full relative">
-      <div className="flex-1 overflow-auto px-4 sm:px-8 py-4 pb-32">
+    <div className="flex flex-col h-full w-full">
+      <div className="flex-1 overflow-auto px-4 sm:px-8 py-4">
         {messages.length === 0 && <WelcomeUI />}
         <MessageList isLoading={isLoading} messages={messages} />
         <div ref={messagesEndRef} />
       </div>
-      <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
+      <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
         <ChatInput
           fileInputRef={fileInputRef}
           handleSubmit={handleSubmit}

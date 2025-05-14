@@ -49,6 +49,7 @@ export async function processAllDocsQuery(formData: FormData) {
   }
 
   try {
+    console.log("Processing query against public documents...");
     const result = await askWithRAG(question);
 
     // Return serializable result
@@ -291,5 +292,25 @@ export async function updateConversationTitle(
     console.error("Error updating conversation title:", error);
 
     return { success: false, error: error.message };
+  }
+}
+
+export async function updateConversationFile(
+  conversationId: string
+) {
+  try {
+    if (!conversationId) {
+      return { error: "Conversation ID is required" };
+    }
+
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { hasAttachment: true },
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating conversation file:", error);
+    return { error: error.message || "Failed to update conversation file" };
   }
 }
